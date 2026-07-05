@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: rag-virus-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ragvirus}
+    username: ${DB_USERNAME:ragvirus}
+    password: ${DB_PASSWORD:ragvirus}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+
+policy:
+  public-data:
+    service-key: ${PUBLIC_DATA_SERVICE_KEY:}
+    gov24-base-url: ${GOV24_BASE_URL:https://api.odcloud.kr/api}
+    local-welfare-base-url: ${LOCAL_WELFARE_BASE_URL:https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations}
+
+server:
+  port: ${SERVER_PORT:8080}

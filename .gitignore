@@ -1,0 +1,14 @@
+.gradle/
+build/
+**/build/
+.tools/
+node_modules/
+dist/
+**/dist/
+
+*.log
+*.tmp
+
+.env
+.env.*
+!*.example
