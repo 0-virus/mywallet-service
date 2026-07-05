@@ -804,6 +804,21 @@ chunk content 예시:
 - embedding model 이름 저장
 - 실패 시 재시도 가능하게 로그 기록
 
+MVP 구현 순서:
+
+1. 외부 API key 없이도 시연 가능한 `local-hashing-v1` 임베딩 provider를 먼저 구현한다.
+2. `policy_embedding.embedding_json`에 고정 차원 float 배열을 JSONB로 저장한다.
+3. 동기화 직후 chunk를 재생성하고 해당 chunk의 임베딩도 즉시 재생성한다.
+4. 검색은 초기 정책 수가 적은 것을 전제로 애플리케이션 레벨 cosine similarity로 수행한다.
+5. OpenAI/Spring AI 또는 pgvector 적용이 가능해지면 provider와 저장소만 교체한다.
+
+OpenAI 직접 연동 단계:
+
+- `POLICY_RAG_EMBEDDING_PROVIDER=openai`일 때 OpenAI Embeddings API를 사용한다.
+- 기본 임베딩 모델은 `text-embedding-3-small`로 둔다.
+- API key는 `OPENAI_API_KEY` 환경변수로만 주입하고 코드/문서에 저장하지 않는다.
+- 기존 `local-hashing-v1`은 개발/시연 fallback으로 유지한다.
+
 #### 8.3 Retriever 구현
 
 `PolicyRetriever`를 구현한다.
@@ -827,6 +842,23 @@ chunk content 예시:
 - 지원내용
 - 신청방법
 - 정책 요약
+
+MVP retriever 응답:
+
+- `policyId`
+- `policyTitle`
+- `chunkId`
+- `chunkType`
+- `content`
+- `similarityScore`
+- `officialUrl`
+
+검색 기준:
+
+- 질문 임베딩과 chunk 임베딩 cosine similarity
+- 정책별 중복 chunk는 상위 chunk 중심으로 병합
+- 추천 API의 신청 가능성 점수와 결합
+- similarity가 너무 낮으면 "조건을 더 입력해달라"는 답변으로 fallback
 
 #### 8.4 챗봇 API
 
@@ -869,6 +901,13 @@ LLM 프롬프트 규칙:
 - 외부 신청 링크가 없으면 문의처를 안내한다.
 - 출처 정책명을 함께 제공한다.
 - 사용자 조건에 없는 정보는 추가 질문으로 유도한다.
+
+OpenAI 답변 생성 단계:
+
+- `POLICY_RAG_CHAT_PROVIDER=openai`일 때 OpenAI Chat Completions API로 답변을 생성한다.
+- 기본 chat model은 `gpt-4o-mini`로 둔다.
+- system prompt는 "제공된 추천 결과와 검색 근거 chunk만 사용"하도록 제한한다.
+- API key가 없거나 provider가 local이면 기존 규칙 기반 답변을 fallback으로 사용한다.
 
 ### 프론트엔드 작업
 

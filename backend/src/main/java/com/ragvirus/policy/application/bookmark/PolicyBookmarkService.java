@@ -63,6 +63,18 @@ public class PolicyBookmarkService {
         return PolicyBookmarkResponse.from(bookmark);
     }
 
+    @Transactional
+    public void deleteBookmark(Long memberId, Long bookmarkId) {
+        PolicyBookmark bookmark = bookmarkRepository.findById(bookmarkId)
+                .orElseThrow(() -> new IllegalArgumentException("Bookmark not found: " + bookmarkId));
+        if (!bookmark.getMemberId().equals(memberId)) {
+            throw new IllegalArgumentException("Cannot delete another member's policy bookmark");
+        }
+        Long policyId = bookmark.getPolicy().getId();
+        bookmarkRepository.delete(bookmark);
+        calendarEventRepository.deleteByMemberIdAndPolicy_Id(memberId, policyId);
+    }
+
     private void createCalendarEvents(Long memberId, Policy policy) {
         if (policy.getStartDate() != null) {
             calendarEventRepository.save(new PolicyCalendarEvent(

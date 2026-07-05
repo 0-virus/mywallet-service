@@ -20,17 +20,25 @@ public class PolicySourceRawService {
 
     @Transactional
     public void saveJson(String sourceType, String sourceServiceId, String endpoint, String rawJson) {
-        repository.save(new PolicySourceRaw(sourceType, sourceServiceId, endpoint, normalizeJson(rawJson)));
+        save(sourceType, sourceServiceId, endpoint, normalizeJson(rawJson));
     }
 
     @Transactional
     public void saveXml(String sourceType, String sourceServiceId, String endpoint, String rawXml) {
         try {
             String wrapped = objectMapper.writeValueAsString(new RawXml(rawXml));
-            repository.save(new PolicySourceRaw(sourceType, sourceServiceId, endpoint, wrapped));
+            save(sourceType, sourceServiceId, endpoint, wrapped);
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("Failed to wrap XML raw response as JSON", ex);
         }
+    }
+
+    private void save(String sourceType, String sourceServiceId, String endpoint, String rawData) {
+        repository.findBySourceTypeAndSourceServiceIdAndEndpoint(sourceType, sourceServiceId, endpoint)
+                .ifPresentOrElse(
+                        sourceRaw -> sourceRaw.updateRawData(rawData),
+                        () -> repository.save(new PolicySourceRaw(sourceType, sourceServiceId, endpoint, rawData))
+                );
     }
 
     private String normalizeJson(String rawJson) {

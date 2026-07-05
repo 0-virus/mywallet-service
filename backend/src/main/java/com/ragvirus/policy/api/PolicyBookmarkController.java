@@ -5,6 +5,7 @@ import com.ragvirus.policy.api.dto.PolicyBookmarkResponse;
 import com.ragvirus.policy.application.bookmark.PolicyBookmarkService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,5 +45,13 @@ public class PolicyBookmarkController {
             @Valid @RequestBody ChangeApplyStatusRequest request
     ) {
         return bookmarkService.changeApplyStatus(memberId, bookmarkId, request.applyStatus());
+    }
+
+    @DeleteMapping("/policy-bookmarks/{bookmarkId}")
+    public void deleteBookmark(
+            @RequestHeader("X-Member-Id") Long memberId,
+            @PathVariable Long bookmarkId
+    ) {
+        bookmarkService.deleteBookmark(memberId, bookmarkId);
     }
 }

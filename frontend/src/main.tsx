@@ -41,6 +41,15 @@ type Recommendation = {
   officialUrl: string | null;
 };
 
+type Citation = {
+  policyId: number;
+  policyTitle: string;
+  chunkType: string;
+  content: string;
+  officialUrl: string | null;
+  similarityScore: number;
+};
+
 type Profile = {
   age: string;
   employmentStatus: string;
@@ -48,6 +57,8 @@ type Profile = {
   incomeRange: string;
   householdStatus: string;
   housingStatus: string;
+  interestCategories: string;
+  notificationAgreed: boolean;
 };
 
 const initialProfile: Profile = {
@@ -57,6 +68,8 @@ const initialProfile: Profile = {
   incomeRange: '',
   householdStatus: '',
   housingStatus: '',
+  interestCategories: '주거,취업',
+  notificationAgreed: true,
 };
 
 function App() {
@@ -66,8 +79,10 @@ function App() {
   const [policies, setPolicies] = useState<PolicySummary[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [profile, setProfile] = useState<Profile>(initialProfile);
+  const [profileStatus, setProfileStatus] = useState('');
   const [chatMessage, setChatMessage] = useState('서울 사는 27살 취준생인데 받을 수 있는 지원 있어?');
   const [chatAnswer, setChatAnswer] = useState('');
+  const [citations, setCitations] = useState<Citation[]>([]);
   const [loading, setLoading] = useState(false);
 
   const profilePayload = useMemo(() => ({
@@ -77,12 +92,50 @@ function App() {
     incomeRange: profile.incomeRange || null,
     householdStatus: profile.householdStatus || null,
     housingStatus: profile.housingStatus || null,
-    interestCategories: category || null,
+    interestCategories: profile.interestCategories || category || null,
+    notificationAgreed: profile.notificationAgreed,
   }), [profile, category]);
 
   useEffect(() => {
+    void loadProfile();
     void loadPolicies();
   }, []);
+
+  async function loadProfile() {
+    const response = await fetch(`${API_BASE}/api/policy/profile`, {
+      headers: { 'X-Member-Id': MEMBER_ID },
+    });
+    if (response.status === 404) {
+      return;
+    }
+    if (!response.ok) {
+      setProfileStatus('프로필을 불러오지 못했습니다.');
+      return;
+    }
+    const data = await response.json();
+    setProfile({
+      age: data.age?.toString() ?? '',
+      employmentStatus: data.employmentStatus ?? '',
+      studentStatus: data.studentStatus === null || data.studentStatus === undefined ? '' : String(data.studentStatus),
+      incomeRange: data.incomeRange ?? '',
+      householdStatus: data.householdStatus ?? '',
+      housingStatus: data.housingStatus ?? '',
+      interestCategories: data.interestCategories ?? '',
+      notificationAgreed: Boolean(data.notificationAgreed),
+    });
+  }
+
+  async function saveProfile() {
+    const response = await fetch(`${API_BASE}/api/policy/profile`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Member-Id': MEMBER_ID,
+      },
+      body: JSON.stringify(profilePayload),
+    });
+    setProfileStatus(response.ok ? '저장되었습니다.' : '저장에 실패했습니다.');
+  }
 
   async function loadPolicies() {
     setLoading(true);
@@ -118,6 +171,7 @@ function App() {
     const data = await response.json();
     setChatAnswer(data.answer);
     setRecommendations(data.recommendations ?? []);
+    setCitations(data.citations ?? []);
     setLoading(false);
   }
 
@@ -167,12 +221,13 @@ function App() {
         </div>
 
         <aside className="sidePanel">
-          <ProfileForm profile={profile} setProfile={setProfile} />
+          <ProfileForm profile={profile} setProfile={setProfile} onSave={saveProfile} status={profileStatus} />
           <div className="chatBox">
             <h2>정책 챗봇</h2>
             <textarea value={chatMessage} onChange={(event) => setChatMessage(event.target.value)} />
             <button className="primary wide" onClick={chat} disabled={loading}>질문하기</button>
             {chatAnswer && <p className="answer">{chatAnswer}</p>}
+            {citations.length > 0 && <CitationList citations={citations} />}
           </div>
         </aside>
       </section>
@@ -180,7 +235,17 @@ function App() {
   );
 }
 
-function ProfileForm({ profile, setProfile }: { profile: Profile; setProfile: (profile: Profile) => void }) {
+function ProfileForm({
+  profile,
+  setProfile,
+  onSave,
+  status,
+}: {
+  profile: Profile;
+  setProfile: (profile: Profile) => void;
+  onSave: () => void;
+  status: string;
+}) {
   return (
     <div className="profileBox">
       <h2>사용자 조건</h2>
@@ -196,6 +261,27 @@ function ProfileForm({ profile, setProfile }: { profile: Profile; setProfile: (p
       <label>소득 구간<input value={profile.incomeRange} onChange={(event) => setProfile({ ...profile, incomeRange: event.target.value })} placeholder="중위소득 100% 이하" /></label>
       <label>가구 상태<input value={profile.householdStatus} onChange={(event) => setProfile({ ...profile, householdStatus: event.target.value })} placeholder="1인가구" /></label>
       <label>주거 상태<input value={profile.housingStatus} onChange={(event) => setProfile({ ...profile, housingStatus: event.target.value })} placeholder="무주택" /></label>
+      <label>관심 분야<input value={profile.interestCategories} onChange={(event) => setProfile({ ...profile, interestCategories: event.target.value })} placeholder="주거,취업" /></label>
+      <label className="inline">
+        <input type="checkbox" checked={profile.notificationAgreed} onChange={(event) => setProfile({ ...profile, notificationAgreed: event.target.checked })} />
+        알림 동의
+      </label>
+      <button className="primary wide" onClick={onSave}>조건 저장</button>
+      {status && <p className="statusText">{status}</p>}
+    </div>
+  );
+}
+
+function CitationList({ citations }: { citations: Citation[] }) {
+  return (
+    <div className="citations">
+      <h3>근거</h3>
+      {citations.slice(0, 3).map((citation) => (
+        <div className="citation" key={`${citation.policyId}-${citation.chunkType}`}>
+          <p className="citationTitle">{citation.policyTitle} · {labelChunkType(citation.chunkType)}</p>
+          <p>{trimCitation(citation.content)}</p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -257,6 +343,23 @@ function labelStatus(status: string) {
     unknown: '확인 필요',
   };
   return labels[status] ?? status;
+}
+
+function labelChunkType(type: string) {
+  const labels: Record<string, string> = {
+    summary: '정책 요약',
+    target: '지원대상',
+    criteria: '선정기준',
+    benefit: '지원내용',
+    apply: '신청방법',
+    contact: '문의처',
+  };
+  return labels[type] ?? type;
+}
+
+function trimCitation(content: string) {
+  const compact = content.replace(/\s+/g, ' ').trim();
+  return compact.length > 180 ? `${compact.slice(0, 180)}...` : compact;
 }
 
 createRoot(document.getElementById('root')!).render(<App />);

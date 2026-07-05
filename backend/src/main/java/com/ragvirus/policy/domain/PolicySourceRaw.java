@@ -42,4 +42,9 @@ public class PolicySourceRaw {
         this.endpoint = endpoint;
         this.rawData = rawData;
     }
+
+    public void updateRawData(String rawData) {
+        this.rawData = rawData;
+        this.fetchedAt = Instant.now();
+    }
 }

@@ -20,6 +20,14 @@ policy:
     service-key: ${PUBLIC_DATA_SERVICE_KEY:}
     gov24-base-url: ${GOV24_BASE_URL:https://api.odcloud.kr/api}
     local-welfare-base-url: ${LOCAL_WELFARE_BASE_URL:https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations}
+  rag:
+    embedding-provider: ${POLICY_RAG_EMBEDDING_PROVIDER:local}
+    chat-provider: ${POLICY_RAG_CHAT_PROVIDER:local}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+      chat-model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
 
 server:
   port: ${SERVER_PORT:8080}

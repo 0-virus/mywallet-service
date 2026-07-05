@@ -56,6 +56,37 @@ public class PolicyCondition {
         this.policy = policy;
     }
 
+    public void applyExtracted(
+            Integer minAge,
+            Integer maxAge,
+            String gender,
+            String incomeBand,
+            String employmentStatus,
+            Boolean studentStatus,
+            String householdStatus,
+            String housingStatus,
+            String businessStatus,
+            String conditionSummary,
+            boolean needManualCheck,
+            String missingFields,
+            String conditionSource
+    ) {
+        this.minAge = minAge;
+        this.maxAge = maxAge;
+        this.gender = gender;
+        this.incomeBand = incomeBand;
+        this.employmentStatus = employmentStatus;
+        this.studentStatus = studentStatus;
+        this.householdStatus = householdStatus;
+        this.housingStatus = housingStatus;
+        this.businessStatus = businessStatus;
+        this.conditionSummary = conditionSummary;
+        this.needManualCheck = needManualCheck;
+        this.missingFields = missingFields;
+        this.conditionSource = conditionSource;
+        this.updatedAt = Instant.now();
+    }
+
     public Long getId() {
         return id;
     }

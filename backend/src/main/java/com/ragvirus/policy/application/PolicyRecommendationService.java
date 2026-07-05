@@ -5,6 +5,8 @@ import com.ragvirus.policy.application.eligibility.EligibilityResult;
 import com.ragvirus.policy.application.eligibility.PolicyEligibilityService;
 import com.ragvirus.policy.application.eligibility.UserPolicyCondition;
 import com.ragvirus.policy.domain.Policy;
+import com.ragvirus.policy.domain.PolicyCondition;
+import com.ragvirus.policy.repository.PolicyConditionRepository;
 import com.ragvirus.policy.repository.PolicyRepository;
 import java.util.Comparator;
 import java.util.List;
@@ -15,10 +17,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class PolicyRecommendationService {
 
     private final PolicyRepository policyRepository;
+    private final PolicyConditionRepository conditionRepository;
     private final PolicyEligibilityService eligibilityService;
 
-    public PolicyRecommendationService(PolicyRepository policyRepository, PolicyEligibilityService eligibilityService) {
+    public PolicyRecommendationService(
+            PolicyRepository policyRepository,
+            PolicyConditionRepository conditionRepository,
+            PolicyEligibilityService eligibilityService
+    ) {
         this.policyRepository = policyRepository;
+        this.conditionRepository = conditionRepository;
         this.eligibilityService = eligibilityService;
     }
 
@@ -26,6 +34,7 @@ public class PolicyRecommendationService {
     public List<PolicyRecommendationResponse> recommend(UserPolicyCondition userCondition) {
         return policyRepository.findAll().stream()
                 .filter(Policy::isActive)
+                .filter(this::isYouthRecommendationCandidate)
                 .map(policy -> toRecommendation(policy, userCondition))
                 .filter(response -> !"ineligible".equals(response.eligibilityStatus()))
                 .sorted(Comparator
@@ -55,8 +64,42 @@ public class PolicyRecommendationService {
         if ("open".equals(policy.getApplicationStatus()) || "always_open".equals(policy.getApplicationStatus())) {
             score += 20;
         }
+        if (hasYouthText(policy)) {
+            score += 10;
+        }
+        if (hasAgeCondition(policy)) {
+            score += 10;
+        }
         score += eligibility.matchedReasons().size() * 5;
         score -= eligibility.needCheckReasons().size() * 2;
         return score;
+    }
+
+    private boolean isYouthRecommendationCandidate(Policy policy) {
+        return hasYouthText(policy) || hasAgeCondition(policy);
+    }
+
+    private boolean hasAgeCondition(Policy policy) {
+        return conditionRepository.findByPolicy_Id(policy.getId()).stream()
+                .anyMatch(this::hasAgeCondition);
+    }
+
+    private boolean hasAgeCondition(PolicyCondition condition) {
+        return condition.getMinAge() != null || condition.getMaxAge() != null;
+    }
+
+    private boolean hasYouthText(Policy policy) {
+        String text = String.join(" ",
+                nullToBlank(policy.getTitle()),
+                nullToBlank(policy.getSummary()),
+                nullToBlank(policy.getTargetText()),
+                nullToBlank(policy.getCriteriaText()),
+                nullToBlank(policy.getBenefitText())
+        );
+        return text.contains("청년") || text.contains("대학생") || text.contains("취준") || text.contains("구직");
+    }
+
+    private String nullToBlank(String value) {
+        return value == null ? "" : value;
     }
 }

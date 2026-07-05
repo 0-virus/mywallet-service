@@ -127,6 +127,22 @@ textarea {
   font-size: 13px;
 }
 
+.profileBox label.inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profileBox label.inline input {
+  width: auto;
+}
+
+.statusText {
+  margin: 10px 0 0;
+  color: #176b87;
+  font-size: 13px;
+}
+
 textarea {
   min-height: 120px;
   resize: vertical;
@@ -137,6 +153,38 @@ textarea {
   margin: 12px 0 0;
   line-height: 1.6;
   color: #263747;
+}
+
+.citations {
+  margin-top: 14px;
+  border-top: 1px solid #dce2e8;
+  padding-top: 12px;
+}
+
+.citations h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.citation {
+  border: 1px solid #dce2e8;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #f8fafc;
+}
+
+.citation p {
+  margin: 0;
+  color: #52616f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.citation .citationTitle {
+  color: #17202a;
+  font-weight: 700;
+  margin-bottom: 4px;
 }
 
 .list {

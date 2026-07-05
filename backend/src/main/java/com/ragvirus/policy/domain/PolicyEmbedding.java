@@ -42,4 +42,20 @@ public class PolicyEmbedding {
         this.embeddingJson = embeddingJson;
         this.embeddingModel = embeddingModel;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public PolicyDocumentChunk getChunk() {
+        return chunk;
+    }
+
+    public String getEmbeddingJson() {
+        return embeddingJson;
+    }
+
+    public String getEmbeddingModel() {
+        return embeddingModel;
+    }
 }

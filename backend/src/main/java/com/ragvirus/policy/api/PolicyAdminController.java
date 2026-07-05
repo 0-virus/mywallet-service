@@ -34,6 +34,18 @@ public class PolicyAdminController {
                 )));
     }
 
+    @PostMapping("/local-welfare/{servId}/sync")
+    public ResponseEntity<Map<String, Object>> syncLocalWelfarePolicy(@PathVariable @NotBlank String servId) {
+        return policySyncService.syncLocalWelfarePolicy(servId)
+                .map(this::synced)
+                .orElseGet(() -> ResponseEntity.ok(Map.of(
+                        "synced", false,
+                        "sourceType", "local_welfare",
+                        "sourcePolicyId", servId,
+                        "reason", "No policy detail data returned"
+                )));
+    }
+
     private ResponseEntity<Map<String, Object>> synced(Policy policy) {
         return ResponseEntity.ok(Map.of(
                 "synced", true,

@@ -46,4 +46,24 @@ public class PolicyDocumentChunk {
         this.content = content;
         this.metadata = metadata;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Policy getPolicy() {
+        return policy;
+    }
+
+    public String getChunkType() {
+        return chunkType;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
 }
